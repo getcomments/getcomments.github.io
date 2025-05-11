@@ -209,7 +209,7 @@ function goFetchComment(afterNode = ""){
     let filter = Options.ignoreCommentReply? "toplevel" : "stream";
     SessionData.currentXhr = $.ajax({
         method: "GET",
-        url: `https://graph.facebook.com/v15.0/${pageId}_${postId}/comments?access_token=${accessToken}&limit=${limit}&filter=${filter}&fields=message,id${afterParam}`,
+        url: `https://graph.facebook.com/v17.0/${pageId}_${postId}/comments?access_token=${accessToken}&limit=${limit}&filter=${filter}&fields=message,id${afterParam}`,
         success: onFetchComment,
         error: (e)=>{onError(e, "Không lấy được comment");}
     })
@@ -462,7 +462,7 @@ function submitAccessToken(){
 function goFetchPageId(accessToken){
     $.ajax({
         method: "GET",
-        url: `https://graph.facebook.com/v15.0/me?access_token=${accessToken}`,
+        url: `https://graph.facebook.com/v17.0/me?access_token=${accessToken}`,
         success: function(response){ onFetchPageId(response, accessToken)},
         error: (e)=>{onError(e, "Không lấy được thông tin Page, vui lòng kiểm tra lại Access Token");}
     })
