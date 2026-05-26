@@ -30,6 +30,7 @@ var SessionData = {
     accessToken: "",
     pageId: "",
     postId: "",
+    isPhoto: false,
     /**
      * @type {CommentObject[]}
      */
@@ -55,7 +56,7 @@ var toastr = toastr || {};
  * @type {PageInfoObject[]}
  */
 var PageData = [];
-console.log("v1");
+console.log("v6");
 
 $(function (){
     initEvents();
@@ -141,6 +142,7 @@ function submitForm(){
 
     let link = $("#post-link").val();
     var postId = getPostId(link);
+    var isPhoto = isPhotoLink(link);
 
     if (!postId){
         onError(null, "Thiếu link bài viết");
@@ -151,6 +153,7 @@ function submitForm(){
         accessToken: accessToken,
         pageId: pageId,
         postId: postId,
+        isPhoto: isPhoto,
         commentData: []
     };
     $('#table-comment').DataTable().clear();
@@ -189,6 +192,11 @@ function getPostId(link){
     return postId
 }
 
+function isPhotoLink(link){
+    // /photo/?fbid=..., /photo.php?fbid=..., or photos/ path
+    return /\/photo(\.php)?\/?\?.*fbid=/.test(link) || link.indexOf("/photos/") >= 0;
+}
+
 function getFirstNumPhrase(str){
     var arrNum = str.match(/\d+/g);
     if (arrNum && arrNum.length > 0)
@@ -203,13 +211,14 @@ function goFetchComment(afterNode = ""){
         afterParam = `&after=${afterNode}`
     }
 
-    let {pageId, postId, accessToken} = SessionData;
+    let {pageId, postId, accessToken, isPhoto} = SessionData;
     abortCurrentXhr();
     let limit = Options.limit;
     let filter = Options.ignoreCommentReply? "toplevel" : "stream";
+    let nodeId = isPhoto ? postId : `${pageId}_${postId}`;
     SessionData.currentXhr = $.ajax({
         method: "GET",
-        url: `https://graph.facebook.com/v21.0/${pageId}_${postId}/comments?access_token=${accessToken}&limit=${limit}&filter=${filter}&fields=message,id${afterParam}`,
+        url: `https://graph.facebook.com/v21.0/${nodeId}/comments?access_token=${accessToken}&limit=${limit}&filter=${filter}&fields=message,id${afterParam}`,
         success: onFetchComment,
         error: (e)=>{onError(e, "Không lấy được comment");}
     })
@@ -372,7 +381,10 @@ function initDataTable() {
                 data: "id",
                 className: "link-cell",
                 render: data => {
-                    var link = `https://www.facebook.com/${SessionData.pageId}/posts/${SessionData.postId}?comment_id=${data.substr(data.indexOf("_") + 1)}`
+                    var commentId = data.substr(data.indexOf("_") + 1);
+                    var link = SessionData.isPhoto
+                        ? `https://www.facebook.com/photo/?fbid=${SessionData.postId}&comment_id=${commentId}`
+                        : `https://www.facebook.com/${SessionData.pageId}/posts/${SessionData.postId}?comment_id=${commentId}`;
                     return `<a href="${link}" target="_blank">${link}</a>`;
                 }
             }
